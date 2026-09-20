@@ -1,4 +1,4 @@
-Add-Type -AssemblyName System.Windows.Forms
+﻿Add-Type -AssemblyName System.Windows.Forms
 Add-Type -AssemblyName System.Drawing
 Add-Type -AssemblyName System.IO.Compression.FileSystem
 
@@ -881,56 +881,14 @@ $filesGroup = New-Object System.Windows.Forms.GroupBox
 $filesGroup.Text = "Videos seleccionados"
 $filesGroup.Font = New-Object System.Drawing.Font("Segoe UI", 10, [System.Drawing.FontStyle]::Bold)
 $filesGroup.Location = New-Object System.Drawing.Point(24, 510)
-$filesGroup.Size = New-Object System.Drawing.Size(600, 115)
+$filesGroup.Size = New-Object System.Drawing.Size(930, 115)
 $form.Controls.Add($filesGroup)
 
 $list = New-Object System.Windows.Forms.ListBox
 $list.Location = New-Object System.Drawing.Point(15, 28)
-$list.Size = New-Object System.Drawing.Size(450, 73)
+$list.Size = New-Object System.Drawing.Size(900, 73)
 $list.HorizontalScrollbar = $true
-$list.SelectionMode = "MultiExtended"
 $filesGroup.Controls.Add($list)
-
-$btnRemoveSelected = New-Object System.Windows.Forms.Button
-$btnRemoveSelected.Text = "Quitar Sel."
-$btnRemoveSelected.Font = New-Object System.Drawing.Font("Segoe UI", 9)
-$btnRemoveSelected.Location = New-Object System.Drawing.Point(475, 28)
-$btnRemoveSelected.Size = New-Object System.Drawing.Size(110, 30)
-$filesGroup.Controls.Add($btnRemoveSelected)
-
-$btnClearAll = New-Object System.Windows.Forms.Button
-$btnClearAll.Text = "Limpiar Todo"
-$btnClearAll.Font = New-Object System.Drawing.Font("Segoe UI", 9)
-$btnClearAll.Location = New-Object System.Drawing.Point(475, 68)
-$btnClearAll.Size = New-Object System.Drawing.Size(110, 30)
-$filesGroup.Controls.Add($btnClearAll)
-
-$userProfilesGroup = New-Object System.Windows.Forms.GroupBox
-$userProfilesGroup.Text = "Mis Perfiles Guardados"
-$userProfilesGroup.Font = New-Object System.Drawing.Font("Segoe UI", 10, [System.Drawing.FontStyle]::Bold)
-$userProfilesGroup.Location = New-Object System.Drawing.Point(634, 510)
-$userProfilesGroup.Size = New-Object System.Drawing.Size(320, 115)
-$form.Controls.Add($userProfilesGroup)
-
-$userProfileList = New-Object System.Windows.Forms.ListBox
-$userProfileList.Font = New-Object System.Drawing.Font("Segoe UI", 9)
-$userProfileList.Location = New-Object System.Drawing.Point(15, 28)
-$userProfileList.Size = New-Object System.Drawing.Size(200, 73)
-$userProfilesGroup.Controls.Add($userProfileList)
-
-$btnApplyUser = New-Object System.Windows.Forms.Button
-$btnApplyUser.Text = "Cargar"
-$btnApplyUser.Font = New-Object System.Drawing.Font("Segoe UI", 9)
-$btnApplyUser.Location = New-Object System.Drawing.Point(225, 28)
-$btnApplyUser.Size = New-Object System.Drawing.Size(85, 30)
-$userProfilesGroup.Controls.Add($btnApplyUser)
-
-$btnDelUser = New-Object System.Windows.Forms.Button
-$btnDelUser.Text = "Borrar"
-$btnDelUser.Font = New-Object System.Drawing.Font("Segoe UI", 9)
-$btnDelUser.Location = New-Object System.Drawing.Point(225, 68)
-$btnDelUser.Size = New-Object System.Drawing.Size(85, 30)
-$userProfilesGroup.Controls.Add($btnDelUser)
 
 $progress = New-Object System.Windows.Forms.ProgressBar
 $progress.Location = New-Object System.Drawing.Point(24, 640)
@@ -970,7 +928,6 @@ function Update-Layout {
         $btnToggleAdvanced.Text = "▼ Ocultar opciones avanzadas"
         $settingsGroup.Location = New-Object System.Drawing.Point(24, 350)
         $filesGroup.Location = New-Object System.Drawing.Point(24, 550)
-        $userProfilesGroup.Location = New-Object System.Drawing.Point(634, 550)
         $progress.Location = New-Object System.Drawing.Point(24, 680)
         $lblProgress.Location = New-Object System.Drawing.Point(27, 710)
         $log.Location = New-Object System.Drawing.Point(24, 738)
@@ -979,7 +936,6 @@ function Update-Layout {
     } else {
         $btnToggleAdvanced.Text = "► Mostrar opciones avanzadas"
         $filesGroup.Location = New-Object System.Drawing.Point(24, 350)
-        $userProfilesGroup.Location = New-Object System.Drawing.Point(634, 350)
         $progress.Location = New-Object System.Drawing.Point(24, 480)
         $lblProgress.Location = New-Object System.Drawing.Point(27, 510)
         $log.Location = New-Object System.Drawing.Point(24, 538)
@@ -1027,7 +983,7 @@ $btnSaveProfile.Add_Click({
     
     if (-not (Validate-Settings)) { return }
 
-        $script:profiles[$name] = @{
+    $script:userProfiles[$name] = @{
         Width = [int]$txtWidth.Text
         Height = [int]$txtHeight.Text
         FPS = [string]$fpsCombo.SelectedItem
@@ -1049,39 +1005,30 @@ $btnSaveProfile.Add_Click({
     }
     
     Save-UserProfiles
-    Refresh-UserProfilesList
+    Log "Perfil '$name' guardado."
     Reload-ProfileCombo
     $profileCombo.SelectedItem = $name
-    Log "Perfil guardado: $name"
+    Update-ProfileStatus
 })
 
-$btnApplyUser.Add_Click({
-    if ($userProfileList.SelectedItem) {
-        $profileCombo.SelectedItem = $userProfileList.SelectedItem
-    }
-})
-
-$btnDelUser.Add_Click({
-    if ($userProfileList.SelectedItem) {
-        $name = [string]$userProfileList.SelectedItem
-        $res = [System.Windows.Forms.MessageBox]::Show($form, "Confirmar borrado de perfil: $name", "Borrar", [System.Windows.Forms.MessageBoxButtons]::YesNo)
-        if ($res -eq "Yes") {
-            $script:profiles.Remove($name)
+$btnDeleteProfile.Add_Click({
+    $name = [string]$profileCombo.SelectedItem
+    if ($script:userProfiles.Contains($name)) {
+        $result = [System.Windows.Forms.MessageBox]::Show(
+            $form,
+            "¿Estás seguro de eliminar el perfil '$name'?",
+            $script:AppName,
+            [System.Windows.Forms.MessageBoxButtons]::YesNo,
+            [System.Windows.Forms.MessageBoxIcon]::Question
+        )
+        if ($result -eq "Yes") {
+            $script:userProfiles.Remove($name)
             Save-UserProfiles
+            Log "Perfil '$name' eliminado."
             Reload-ProfileCombo
-            Refresh-UserProfilesList
         }
     }
 })
-
-function Refresh-UserProfilesList {
-    $userProfileList.Items.Clear()
-    foreach ($k in $script:profiles.Keys) {
-        if ($script:profiles[$k].IsUser) {
-            [void]$userProfileList.Items.Add($k)
-        }
-    }
-}
 
 $restoreBtn.Add_Click({
     Apply-Profile ([string]$profileCombo.SelectedItem)
@@ -1094,32 +1041,12 @@ $btnSelect.Add_Click({
     $dlg.Multiselect = $true
 
     if ($dlg.ShowDialog() -eq "OK") {
-        foreach ($f in $dlg.FileNames) { 
-            if (-not $list.Items.Contains($f)) {
-                $script:files += $f
-                [void]$list.Items.Add($f) 
-            }
-        }
-        Log "$($script:files.Count) video(s) seleccionado(s) en total."
+        $script:files = @($dlg.FileNames)
+        $list.Items.Clear()
+        foreach ($f in $script:files) { [void]$list.Items.Add($f) }
+        Log "$($script:files.Count) video(s) seleccionado(s)."
         Update-Ready
     }
-})
-
-$btnRemoveSelected.Add_Click({
-    if ($list.SelectedItems.Count -gt 0) {
-        $selectedItems = @($list.SelectedItems)
-        foreach ($item in $selectedItems) {
-            $list.Items.Remove($item)
-            $script:files = $script:files | Where-Object { $_ -ne $item }
-        }
-        Update-Ready
-    }
-})
-
-$btnClearAll.Add_Click({
-    $list.Items.Clear()
-    $script:files = @()
-    Update-Ready
 })
 
 $btnOutput.Add_Click({
@@ -1327,7 +1254,7 @@ else {
 }
 
 Update-FFmpegStatus
-Refresh-UserProfilesList
 Update-Layout
 [void]$form.ShowDialog()
+
 

@@ -1,4 +1,4 @@
-Add-Type -AssemblyName System.Windows.Forms
+﻿Add-Type -AssemblyName System.Windows.Forms
 Add-Type -AssemblyName System.Drawing
 Add-Type -AssemblyName System.IO.Compression.FileSystem
 
@@ -169,12 +169,12 @@ function Download-FFmpeg {
     }
 
     $notice = @"
-No se encontró FFmpeg en este equipo.
+No se encontrÃ³ FFmpeg en este equipo.
 
-Se descargarán automáticamente las librerías/binaries necesarios desde:
+Se descargarÃ¡n automÃ¡ticamente las librerÃ­as/binaries necesarios desde:
 $script:downloadUrl
 
-La descarga es necesaria para realizar las conversiones y requiere conexión a Internet.
+La descarga es necesaria para realizar las conversiones y requiere conexiÃ³n a Internet.
 "@
     $result = [System.Windows.Forms.MessageBox]::Show(
         $form,
@@ -185,7 +185,7 @@ La descarga es necesaria para realizar las conversiones y requiere conexión a I
     )
 
     if ($result -ne [System.Windows.Forms.DialogResult]::OK) {
-        Log "El usuario canceló la descarga de FFmpeg."
+        Log "El usuario cancelÃ³ la descarga de FFmpeg."
         return $false
     }
 
@@ -196,7 +196,7 @@ La descarga es necesaria para realizar las conversiones y requiere conexión a I
     $btnCancel.Enabled = $false
     $progress.Style = "Continuous"
     $progress.Value = 0
-    $lblProgress.Text = "Descargando librerías de FFmpeg..."
+    $lblProgress.Text = "Descargando librerÃ­as de FFmpeg..."
 
     try {
         $tmpZip = $script:ffmpegZip
@@ -211,7 +211,7 @@ La descarga es necesaria para realizar las conversiones y requiere conexión a I
             param($sender, $e)
             $value = [Math]::Max(0, [Math]::Min(100, $e.ProgressPercentage))
             $progress.Value = $value
-            $lblProgress.Text = "Descargando librerías de FFmpeg... $value%"
+            $lblProgress.Text = "Descargando librerÃ­as de FFmpeg... $value%"
             [System.Windows.Forms.Application]::DoEvents()
         }
         Register-ObjectEvent -InputObject $wc -EventName DownloadProgressChanged -SourceIdentifier "FFmpegDownloadProgress" -Action $downloadEvent | Out-Null
@@ -236,7 +236,7 @@ La descarga es necesaria para realizar las conversiones y requiere conexión a I
         }
         New-Item -ItemType Directory -Path $extractRoot -Force | Out-Null
 
-        $lblProgress.Text = "Extrayendo librerías de FFmpeg..."
+        $lblProgress.Text = "Extrayendo librerÃ­as de FFmpeg..."
         $progress.Style = "Marquee"
         [System.Windows.Forms.Application]::DoEvents()
 
@@ -268,7 +268,7 @@ La descarga es necesaria para realizar las conversiones y requiere conexión a I
         $progress.Value = 0
         $lblProgress.Text = "No se pudo descargar FFmpeg."
         Log "Error descargando FFmpeg: $($_.Exception.Message)"
-        Show-Error "No se pudo descargar FFmpeg.`r`n`r`n$($_.Exception.Message)`r`n`r`nComprueba tu conexión a Internet e inténtalo nuevamente."
+        Show-Error "No se pudo descargar FFmpeg.`r`n`r`n$($_.Exception.Message)`r`n`r`nComprueba tu conexiÃ³n a Internet e intÃ©ntalo nuevamente."
         return $false
     }
     finally {
@@ -349,15 +349,15 @@ function Apply-Profile([string]$Name) {
 function Validate-Settings {
     $w = 0; $h = 0
     if (-not [int]::TryParse($txtWidth.Text.Trim(), [ref]$w) -or $w -lt 16) {
-        Show-Error "La anchura debe ser un número válido mayor o igual a 16."
+        Show-Error "La anchura debe ser un nÃºmero vÃ¡lido mayor o igual a 16."
         return $false
     }
     if (-not [int]::TryParse($txtHeight.Text.Trim(), [ref]$h) -or $h -lt 16) {
-        Show-Error "La altura debe ser un número válido mayor o igual a 16."
+        Show-Error "La altura debe ser un nÃºmero vÃ¡lido mayor o igual a 16."
         return $false
     }
     if (($w % 2) -ne 0 -or ($h % 2) -ne 0) {
-        Show-Error "La anchura y altura deben ser números pares para asegurar compatibilidad con H.264/H.265."
+        Show-Error "La anchura y altura deben ser nÃºmeros pares para asegurar compatibilidad con H.264/H.265."
         return $false
     }
     return $true
@@ -664,7 +664,7 @@ $title.AutoSize = $true
 $form.Controls.Add($title)
 
 $subtitle = New-Object System.Windows.Forms.Label
-$subtitle.Text = "Conversor portátil con perfiles para TV, móviles, web y reproductores antiguos"
+$subtitle.Text = "Conversor portÃ¡til con perfiles para TV, mÃ³viles, web y reproductores antiguos"
 $subtitle.Font = New-Object System.Drawing.Font("Segoe UI", 10)
 $subtitle.ForeColor = [System.Drawing.Color]::DimGray
 $subtitle.Location = New-Object System.Drawing.Point(27, 57)
@@ -765,7 +765,7 @@ $btnDeleteProfile.Enabled = $false
 $profileGroup.Controls.Add($btnDeleteProfile)
 
 $settingsGroup = New-Object System.Windows.Forms.GroupBox
-$settingsGroup.Text = "Personalización"
+$settingsGroup.Text = "PersonalizaciÃ³n"
 $settingsGroup.Font = New-Object System.Drawing.Font("Segoe UI", 10, [System.Drawing.FontStyle]::Bold)
 $settingsGroup.Location = New-Object System.Drawing.Point(24, 310)
 $settingsGroup.Size = New-Object System.Drawing.Size(930, 190)
@@ -886,24 +886,9 @@ $form.Controls.Add($filesGroup)
 
 $list = New-Object System.Windows.Forms.ListBox
 $list.Location = New-Object System.Drawing.Point(15, 28)
-$list.Size = New-Object System.Drawing.Size(450, 73)
+$list.Size = New-Object System.Drawing.Size(570, 73)
 $list.HorizontalScrollbar = $true
-$list.SelectionMode = "MultiExtended"
 $filesGroup.Controls.Add($list)
-
-$btnRemoveSelected = New-Object System.Windows.Forms.Button
-$btnRemoveSelected.Text = "Quitar Sel."
-$btnRemoveSelected.Font = New-Object System.Drawing.Font("Segoe UI", 9)
-$btnRemoveSelected.Location = New-Object System.Drawing.Point(475, 28)
-$btnRemoveSelected.Size = New-Object System.Drawing.Size(110, 30)
-$filesGroup.Controls.Add($btnRemoveSelected)
-
-$btnClearAll = New-Object System.Windows.Forms.Button
-$btnClearAll.Text = "Limpiar Todo"
-$btnClearAll.Font = New-Object System.Drawing.Font("Segoe UI", 9)
-$btnClearAll.Location = New-Object System.Drawing.Point(475, 68)
-$btnClearAll.Size = New-Object System.Drawing.Size(110, 30)
-$filesGroup.Controls.Add($btnClearAll)
 
 $userProfilesGroup = New-Object System.Windows.Forms.GroupBox
 $userProfilesGroup.Text = "Mis Perfiles Guardados"
@@ -958,7 +943,7 @@ $form.Controls.Add($log)
 
 $script:isAdvancedVisible = $false
 $btnToggleAdvanced = New-Object System.Windows.Forms.Button
-$btnToggleAdvanced.Text = "► Mostrar opciones avanzadas"
+$btnToggleAdvanced.Text = "â–º Mostrar opciones avanzadas"
 $btnToggleAdvanced.Font = New-Object System.Drawing.Font("Segoe UI", 9)
 $btnToggleAdvanced.Location = New-Object System.Drawing.Point(24, 310)
 $btnToggleAdvanced.Size = New-Object System.Drawing.Size(200, 30)
@@ -967,7 +952,7 @@ $form.Controls.Add($btnToggleAdvanced)
 function Update-Layout {
     $settingsGroup.Visible = $script:isAdvancedVisible
     if ($script:isAdvancedVisible) {
-        $btnToggleAdvanced.Text = "▼ Ocultar opciones avanzadas"
+        $btnToggleAdvanced.Text = "â–¼ Ocultar opciones avanzadas"
         $settingsGroup.Location = New-Object System.Drawing.Point(24, 350)
         $filesGroup.Location = New-Object System.Drawing.Point(24, 550)
         $userProfilesGroup.Location = New-Object System.Drawing.Point(634, 550)
@@ -977,7 +962,7 @@ function Update-Layout {
         $form.MinimumSize = New-Object System.Drawing.Size(940, 800)
         $form.Size = New-Object System.Drawing.Size(1000, 860)
     } else {
-        $btnToggleAdvanced.Text = "► Mostrar opciones avanzadas"
+        $btnToggleAdvanced.Text = "â–º Mostrar opciones avanzadas"
         $filesGroup.Location = New-Object System.Drawing.Point(24, 350)
         $userProfilesGroup.Location = New-Object System.Drawing.Point(634, 350)
         $progress.Location = New-Object System.Drawing.Point(24, 480)
@@ -1094,32 +1079,12 @@ $btnSelect.Add_Click({
     $dlg.Multiselect = $true
 
     if ($dlg.ShowDialog() -eq "OK") {
-        foreach ($f in $dlg.FileNames) { 
-            if (-not $list.Items.Contains($f)) {
-                $script:files += $f
-                [void]$list.Items.Add($f) 
-            }
-        }
-        Log "$($script:files.Count) video(s) seleccionado(s) en total."
+        $script:files = @($dlg.FileNames)
+        $list.Items.Clear()
+        foreach ($f in $script:files) { [void]$list.Items.Add($f) }
+        Log "$($script:files.Count) video(s) seleccionado(s)."
         Update-Ready
     }
-})
-
-$btnRemoveSelected.Add_Click({
-    if ($list.SelectedItems.Count -gt 0) {
-        $selectedItems = @($list.SelectedItems)
-        foreach ($item in $selectedItems) {
-            $list.Items.Remove($item)
-            $script:files = $script:files | Where-Object { $_ -ne $item }
-        }
-        Update-Ready
-    }
-})
-
-$btnClearAll.Add_Click({
-    $list.Items.Clear()
-    $script:files = @()
-    Update-Ready
 })
 
 $btnOutput.Add_Click({
@@ -1157,7 +1122,7 @@ $btnCancel.Add_Click({
 
 $btnConvert.Add_Click({
     if (-not $script:ffmpeg) {
-        Show-Error "FFmpeg no está disponible."
+        Show-Error "FFmpeg no estÃ¡ disponible."
         return
     }
 
@@ -1330,4 +1295,5 @@ Update-FFmpegStatus
 Refresh-UserProfilesList
 Update-Layout
 [void]$form.ShowDialog()
+
 
