@@ -1,4 +1,4 @@
-Add-Type -AssemblyName System.Windows.Forms
+﻿Add-Type -AssemblyName System.Windows.Forms
 Add-Type -AssemblyName System.Drawing
 Add-Type -AssemblyName System.IO.Compression.FileSystem
 
@@ -9,8 +9,8 @@ Add-Type -AssemblyName System.IO.Compression.FileSystem
 # Designed for Windows PowerShell 5.1 and PS2EXE
 # ============================================================
 
-$script:AppName = "TV Video Converter"
-$script:AppVersion = "1.1.0"
+$script:AppName = "VideoConverter VZSG"
+$script:AppVersion = "1.1.2"
 $script:cancelRequested = $false
 $script:currentProcess = $null
 $script:files = @()
@@ -22,6 +22,7 @@ $script:ffmpegRoot = Join-Path $env:LOCALAPPDATA "TVVideoConverter\ffmpeg"
 $script:ffmpegZip = Join-Path $script:ffmpegRoot "ffmpeg-release-essentials.zip"
 $script:userProfilesPath = Join-Path $env:LOCALAPPDATA "TVVideoConverter\user_profiles.json"
 $script:userProfiles = [ordered]@{ }
+$script:isDownloadingFFmpeg = $false
 
 function Load-UserProfiles {
     $script:userProfiles.Clear()
@@ -192,8 +193,9 @@ La descarga es necesaria para realizar las conversiones y requiere conexión a I
     $btnSelect.Enabled = $false
     $btnOutput.Enabled = $false
     $btnConvert.Enabled = $false
-    $btnFFmpeg.Enabled = $false
     $btnCancel.Enabled = $false
+    $script:isDownloadingFFmpeg = $true
+    Update-FFmpegStatus "downloading"
     $progress.Style = "Continuous"
     $progress.Value = 0
     $lblProgress.Text = "Descargando librerías de FFmpeg..."
@@ -212,6 +214,7 @@ La descarga es necesaria para realizar las conversiones y requiere conexión a I
             $value = [Math]::Max(0, [Math]::Min(100, $e.ProgressPercentage))
             $progress.Value = $value
             $lblProgress.Text = "Descargando librerías de FFmpeg... $value%"
+            Set-FFmpegButtonState "downloading" "FFmpeg: $value%"
             [System.Windows.Forms.Application]::DoEvents()
         }
         Register-ObjectEvent -InputObject $wc -EventName DownloadProgressChanged -SourceIdentifier "FFmpegDownloadProgress" -Action $downloadEvent | Out-Null
@@ -237,6 +240,7 @@ La descarga es necesaria para realizar las conversiones y requiere conexión a I
         New-Item -ItemType Directory -Path $extractRoot -Force | Out-Null
 
         $lblProgress.Text = "Extrayendo librerías de FFmpeg..."
+        Set-FFmpegButtonState "updating" "FFmpeg: Extrayendo..."
         $progress.Style = "Marquee"
         [System.Windows.Forms.Application]::DoEvents()
 
@@ -261,6 +265,7 @@ La descarga es necesaria para realizar las conversiones y requiere conexión a I
         $progress.Value = 100
         $lblProgress.Text = "FFmpeg listo."
         Log "FFmpeg descargado y preparado en: $script:ffmpeg"
+        Update-FFmpegStatus "ok"
         return $true
     }
     catch {
@@ -268,13 +273,14 @@ La descarga es necesaria para realizar las conversiones y requiere conexión a I
         $progress.Value = 0
         $lblProgress.Text = "No se pudo descargar FFmpeg."
         Log "Error descargando FFmpeg: $($_.Exception.Message)"
+        Update-FFmpegStatus "error"
         Show-Error "No se pudo descargar FFmpeg.`r`n`r`n$($_.Exception.Message)`r`n`r`nComprueba tu conexión a Internet e inténtalo nuevamente."
         return $false
     }
     finally {
+        $script:isDownloadingFFmpeg = $false
         $btnSelect.Enabled = $true
         $btnOutput.Enabled = $true
-        $btnFFmpeg.Enabled = $true
         $btnCancel.Enabled = $false
     }
 }
@@ -709,9 +715,12 @@ $form.Controls.Add($btnCancel)
 
 $btnFFmpeg = New-Object System.Windows.Forms.Button
 $btnFFmpeg.Text = "FFmpeg"
-$btnFFmpeg.Font = New-Object System.Drawing.Font("Segoe UI", 10)
-$btnFFmpeg.Size = New-Object System.Drawing.Size(110, 40)
+$btnFFmpeg.Font = New-Object System.Drawing.Font("Segoe UI", 9.5, [System.Drawing.FontStyle]::Bold)
+$btnFFmpeg.Size = New-Object System.Drawing.Size(155, 40)
 $btnFFmpeg.Location = New-Object System.Drawing.Point(639, 112)
+$btnFFmpeg.UseVisualStyleBackColor = $false
+$btnFFmpeg.FlatStyle = [System.Windows.Forms.FlatStyle]::Flat
+$btnFFmpeg.FlatAppearance.BorderSize = 0
 $form.Controls.Add($btnFFmpeg)
 
 $lblOutput = New-Object System.Windows.Forms.Label
@@ -997,7 +1006,51 @@ function Update-Ready {
     $btnConvert.Enabled = ($script:files.Count -gt 0 -and $null -ne $script:ffmpeg)
 }
 
-function Update-FFmpegStatus {
+function Set-FFmpegButtonState([string]$State = "", [string]$CustomText = "") {
+    if (-not $btnFFmpeg) { return }
+    $btnFFmpeg.UseVisualStyleBackColor = $false
+    $btnFFmpeg.FlatStyle = [System.Windows.Forms.FlatStyle]::Flat
+    $btnFFmpeg.FlatAppearance.BorderSize = 0
+
+    switch ($State) {
+        "downloading" {
+            $btnFFmpeg.BackColor = [System.Drawing.Color]::FromArgb(230, 126, 34)
+            $btnFFmpeg.ForeColor = [System.Drawing.Color]::White
+            if ($CustomText) { $btnFFmpeg.Text = $CustomText } else { $btnFFmpeg.Text = "FFmpeg: Descargando..." }
+        }
+        "updating" {
+            $btnFFmpeg.BackColor = [System.Drawing.Color]::FromArgb(41, 128, 185)
+            $btnFFmpeg.ForeColor = [System.Drawing.Color]::White
+            if ($CustomText) { $btnFFmpeg.Text = $CustomText } else { $btnFFmpeg.Text = "FFmpeg: Extrayendo..." }
+        }
+        "ok" {
+            $btnFFmpeg.BackColor = [System.Drawing.Color]::FromArgb(39, 174, 96)
+            $btnFFmpeg.ForeColor = [System.Drawing.Color]::White
+            $btnFFmpeg.Text = "FFmpeg: OK"
+        }
+        "error" {
+            $btnFFmpeg.BackColor = [System.Drawing.Color]::FromArgb(192, 57, 43)
+            $btnFFmpeg.ForeColor = [System.Drawing.Color]::White
+            $btnFFmpeg.Text = "FFmpeg: Error"
+        }
+        "notfound" {
+            $btnFFmpeg.BackColor = [System.Drawing.Color]::FromArgb(192, 57, 43)
+            $btnFFmpeg.ForeColor = [System.Drawing.Color]::White
+            $btnFFmpeg.Text = "FFmpeg: No hallado"
+        }
+        default {
+            if ($script:ffmpeg) {
+                Set-FFmpegButtonState "ok"
+            } else {
+                Set-FFmpegButtonState "notfound"
+            }
+        }
+    }
+    [System.Windows.Forms.Application]::DoEvents()
+}
+
+function Update-FFmpegStatus([string]$State = "") {
+    Set-FFmpegButtonState $State
     if ($script:ffmpeg) {
         $status.Text = "FFmpeg: OK  |  $script:ffmpeg"
         $status.ForeColor = [System.Drawing.Color]::FromArgb(25,130,70)
@@ -1133,6 +1186,7 @@ $btnOutput.Add_Click({
 })
 
 $btnFFmpeg.Add_Click({
+    if ($script:isDownloadingFFmpeg) { return }
     Set-FFmpegTools
     if (-not $script:ffmpeg) {
         $null = Download-FFmpeg
@@ -1316,13 +1370,13 @@ Update-ProfileStatus
 Set-FFmpegTools
 
 if (-not $script:ffmpeg) {
-    Update-FFmpegStatus
+    Update-FFmpegStatus "notfound"
     Log "FFmpeg no encontrado. La herramienta solicitara su descarga automatica."
     [System.Windows.Forms.Application]::DoEvents()
     $null = Download-FFmpeg
 }
 else {
-    Update-FFmpegStatus
+    Update-FFmpegStatus "ok"
     Log "FFmpeg encontrado."
 }
 
@@ -1330,4 +1384,5 @@ Update-FFmpegStatus
 Refresh-UserProfilesList
 Update-Layout
 [void]$form.ShowDialog()
+
 

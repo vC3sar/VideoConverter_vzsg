@@ -1,5 +1,5 @@
 param(
-    [string]$OutputName = "TVVideoConverter.exe"
+    [string]$OutputName = "VideoConverter_VZSG.exe"
 )
 
 $ErrorActionPreference = "Stop"
@@ -9,7 +9,7 @@ $source = Join-Path $root "TVVideoConverter.ps1"
 $output = Join-Path $root $OutputName
 
 Write-Host "==============================================" -ForegroundColor Cyan
-Write-Host " TV Video Converter - Build EXE" -ForegroundColor Cyan
+Write-Host " VideoConverter VZSG - Build EXE" -ForegroundColor Cyan
 Write-Host "==============================================" -ForegroundColor Cyan
 Write-Host ""
 
@@ -24,17 +24,17 @@ if (-not (Get-Command Invoke-ps2exe -ErrorAction SilentlyContinue)) {
 }
 
 $params = @{
-    inputFile  = $source
-    outputFile = $output
-    noConsole  = $true
-    x64        = $true
-    STA        = $true
-    DPIAware   = $true
-    title      = "TV Video Converter"
-    description = "Portable multi-profile video converter"
-    product     = "TV Video Converter"
-    company    = "VazquezSG"
-    version    = "1.1.0.0"
+    inputFile   = $source
+    outputFile  = $output
+    noConsole   = $true
+    x64         = $true
+    STA         = $true
+    DPIAware    = $true
+    title       = "VideoConverter VZSG"
+    description = "Portable multi-profile video converter by VazquezSG"
+    product     = "VideoConverter VZSG"
+    company     = "VazquezSG"
+    version     = "1.1.2.0"
 }
 
 $icon = Join-Path $root "TVVideoConverter.ico"
